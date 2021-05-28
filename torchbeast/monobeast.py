@@ -349,21 +349,24 @@ def train(flags):  # pylint: disable=too-many-branches, too-many-statements
     model = Net(env.observation_space.shape, env.action_space.n, flags.use_lstm)
     buffers = create_buffers(flags, env.observation_space.shape, model.num_actions)
 
-    model.share_memory()
+    # init sharing mode to allow model tensors to be shared across processes
+    model.share_memory() # model method
 
     # Add initial RNN state.
     initial_agent_state_buffers = []
     for _ in range(flags.num_buffers):
         state = model.initial_state(batch_size=1)
         for t in state:
-            t.share_memory_()
+            t.share_memory_() # tensor method
         initial_agent_state_buffers.append(state)
-
-    actor_processes = []
+    
+    # act arguments
     ctx = mp.get_context("fork")
     free_queue = ctx.SimpleQueue()
     full_queue = ctx.SimpleQueue()
 
+    # setup actor processes
+    actor_processes = []
     for i in range(flags.num_actors):
         actor = ctx.Process(
             target=act,
